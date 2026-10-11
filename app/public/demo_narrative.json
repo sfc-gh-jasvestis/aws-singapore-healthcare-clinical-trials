@@ -1,0 +1,76 @@
+{
+  "title": "Singapore Clinical Trial Site Operations",
+  "duration": "6 minutes",
+  "thesis": "Snowflake turns daily site-level activity from 40 trial sites of a fictional Singapore contract research organisation into enrollment-vs-plan and monitoring KPIs, 7-day important-deviation risk scores, data query anomalies and grounded AI answers, all on curated dynamic tables, with no patient data.",
+  "tabs": [
+    {
+      "id": "executive-cockpit",
+      "persona": { "name": "Joanne Koh", "role": "Head of Clinical Operations (fictional)", "avatar": "" },
+      "talking_points": [
+        "Enrollment vs plan, participants enrolled, screen failure rate and important deviations for 40 sites in 5 Singapore planning areas: Novena, Outram, Queenstown, Jurong East and Tampines.",
+        "Every KPI is a numerator over a denominator in a curated dynamic table, so it can be traced back to site-day rows.",
+        "The signal-type chart shows which central-monitoring signals turn into important deviations and which are mostly not confirmed."
+      ],
+      "show": ["KPI cards", "Daily enrollment and signals", "Signals by type", "Site table"],
+      "call_out": "One governed set of trial operations KPIs, traceable to source rows",
+      "transition": { "next_tab": "predictive", "line": "Which sites should central monitoring look at first?" }
+    },
+    {
+      "id": "predictive",
+      "persona": { "name": "Farid Rahman", "role": "Central Monitoring Lead (fictional)", "avatar": "" },
+      "talking_points": [
+        "Snowflake ML classification scores each site's probability of a confirmed important deviation in the next 7 days. It is an operational score, not a clinical prediction.",
+        "The holdout line shows precision and recall on the most recent labelled days, against the base rate.",
+        "Anomaly detection flags data query rate outliers per site, and the forecast projects network-wide enrollment for 14 days."
+      ],
+      "show": ["Holdout metrics", "Risk by site", "Enrollment forecast", "Query rate anomalies"],
+      "call_out": "Honest, evaluated ML inside the data platform",
+      "transition": { "next_tab": "planning", "line": "Is our monitoring keeping up across the island?" }
+    },
+    {
+      "id": "planning",
+      "persona": { "name": "Joanne Koh", "role": "Head of Clinical Operations (fictional)", "avatar": "" },
+      "talking_points": [
+        "Monitoring visit compliance, essential document coverage and pending documents frame the site management gaps.",
+        "Monitoring compliance against important deviations by site shows where missed visits and deviations move together; it is an association, not proof of cause.",
+        "The action memo drafts three prioritised site-management actions from the KPI, site, signal-type and risk tables only."
+      ],
+      "show": ["Monitoring compliance and document coverage", "Monitoring compliance vs deviations", "Action memo"],
+      "call_out": "Grounded draft actions, with a human in the loop",
+      "transition": { "next_tab": "live", "line": "What happens when a late visit record lands right now?" }
+    },
+    {
+      "id": "live",
+      "persona": { "name": "Farid Rahman", "role": "Central Monitoring Lead (fictional)", "avatar": "" },
+      "talking_points": [
+        "Live visit-record events land in RAW.LIVE_VISITS, from the simulator or from Amazon Data Firehose through Snowpipe. They carry no patient identifiers.",
+        "The Snowflake alert logs ALERT events with an SOP hint and the site's current risk band, then emails the central monitoring team."
+      ],
+      "show": ["Events loaded and lag", "Latest visit-record events", "Alert log"],
+      "call_out": "From visit record to follow-up in one platform",
+      "transition": { "next_tab": "ask-ai", "line": "Now ask the data directly." }
+    },
+    {
+      "id": "ask-ai",
+      "persona": { "name": "Joanne Koh", "role": "Head of Clinical Operations (fictional)", "avatar": "" },
+      "talking_points": [
+        "The Cortex Agent uses Cortex Analyst over the semantic view for metrics, and Cortex Search over 13 synthetic site-management SOPs.",
+        "Ask for enrollment vs plan by planning area; each answer shows the generated SQL and the SOPs it cited."
+      ],
+      "show": ["Ask a sample question", "Generated SQL", "SOP citations"],
+      "call_out": "Natural-language answers you can audit",
+      "transition": { "next_tab": "architecture", "line": "Here is how it is built." }
+    },
+    {
+      "id": "architecture",
+      "persona": { "name": "Joanne Koh", "role": "Head of Clinical Operations (fictional)", "avatar": "" },
+      "talking_points": [
+        "Two builds share one core: Snowflake only, or AWS + Snowflake (Data Firehose, Bedrock, QuickSight and Amazon Q).",
+        "Everything shown is synthetic, site-level demo data, rebuilt reproducibly from the repo."
+      ],
+      "show": ["Both architecture diagrams"],
+      "call_out": "One governed core, with an optional AWS edge",
+      "transition": { "next_tab": "", "line": "Questions?" }
+    }
+  ]
+}

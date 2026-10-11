@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "repo": "aws-singapore-healthcare-clinical-trials",
+  "operation": "on-demand",
+  "data_classification": "synthetic demonstration only; site-level aggregates for 40 sites of a fictional Singapore contract research organisation in 5 planning areas, no patient data",
+  "grains": {
+    "RAW.SITES": "one row per trial site (Singapore planning area and therapeutic area)",
+    "RAW.SITE_DAILY": "one row per site per day (90 days)",
+    "RAW.ESSENTIAL_DOCUMENTS": "one row per site (essential document snapshot)",
+    "CURATED.PERFORMANCE_SUMMARY": "one row per site",
+    "CURATED.TREND_ANALYSIS": "one row per day",
+    "CURATED.SIGNAL_SUMMARY": "one row per monitoring signal type",
+    "CURATED.KPI_SUMMARY": "one row per KPI",
+    "ML.DEVIATION_RISK_SCORES": "one row per site (latest day)"
+  },
+  "metrics": {
+    "Enrollment vs Plan": "100 * SUM(ENROLLED_COUNT) / SUM(RAW.SITES.ENROLLMENT_TARGET_90D)",
+    "Participants Enrolled": "SUM(ENROLLED_COUNT)",
+    "Screen Failure Rate": "100 * (SUM(SCREENED_COUNT) - SUM(ENROLLED_COUNT)) / SUM(SCREENED_COUNT)",
+    "Signal Confirmation Rate": "100 * SUM(CONFIRMED_COUNT) / SUM(SIGNAL_COUNT)",
+    "Monitoring Signals": "SUM(SIGNAL_COUNT)",
+    "Important Deviations": "SUM(CONFIRMED_COUNT)",
+    "CAPAs Opened": "SUM(CAPA_OPENED)",
+    "Monitoring Visit Compliance": "100 * SUM(MONITORING_COMPLETED) / SUM(MONITORING_DUE)",
+    "Sites Active": "COUNT(RAW.SITES)",
+    "Essential Document Coverage": "100 * SUM(LEAST(ON_FILE_QTY, REQUIRED_QTY)) / SUM(REQUIRED_QTY)",
+    "Essential Documents Pending": "SUM(PENDING_QTY)"
+  },
+  "chart_bindings": {
+    "daily_enrollment_signals": ["CURATED.TREND_ANALYSIS.METRIC_DATE", "ENROLLED_COUNT", "SIGNAL_COUNT"],
+    "signals_by_type": ["CURATED.SIGNAL_SUMMARY.SIGNAL_TYPE", "SIGNAL_COUNT", "CONFIRMED_COUNT"],
+    "monitoring_vs_deviations": ["CURATED.PERFORMANCE_SUMMARY.MONITORING_COMPLIANCE_PCT", "CONFIRMED_COUNT"],
+    "quicksight_deviation_risk": ["ENTITY_ID", "MAX(DEVIATION_PROB_7D)"]
+  },
+  "freshness": "MAX(EVENT_DATE) is an observation watermark; requestedAt is not freshness",
+  "required_capabilities": {
+    "core_pipeline": "Curated KPIs reconcile to a RAW recomputation (run_core.py checks this on every build)",
+    "deviation_risk_model": "Snowflake ML CLASSIFICATION of P(confirmed important protocol deviation in next 7 days) per site, evaluated on an out-of-time holdout; operational, not clinical",
+    "forecast_and_anomaly": "14-day network-wide enrollment FORECAST; data query rate ANOMALY_DETECTION (train 75 days, detect last 15)",
+    "search": "Cortex Search SEARCH.SITE_SOP_SEARCH over synthetic site-management SOPs (one per therapeutic area and signal type)",
+    "semantic_analytics": "Semantic view APP.TRIAL_OPS_ANALYTICS and Cortex Agent APP.TRIAL_OPS_AGENT using analyst + search tools",
+    "grounded_ai": "Agent answers return generated SQL and SOP citations; the action memo uses only KPI, site, signal-type and risk rows",
+    "quicksight": "DIRECT_QUERY dashboard (sites, daily enrollment and signals, important deviations by site, deviation risk, visit records loaded) through a read-only Snowflake service user",
+    "quicksight_q": "Amazon Q topic over the curated datasets for natural-language questions",
+    "aws_ingestion": "Amazon Data Firehose -> S3 -> Snowpipe AUTO_INGEST into RAW.LIVE_VISITS",
+    "notifications": "APP.LIVE_VISIT_ALERT logs new ALERT events to APP.ALERT_LOG and emails via SYSTEM$SEND_EMAIL; alert and tasks suspended between demos",
+    "orchestration": "Task graph APP.TASK_REFRESH_CURATED -> APP.TASK_RESCORE_RISK run on demand (EXECUTE TASK)",
+    "app_deployment": "SPCS service APP.SG_HEALTHCARE_CLINICAL_TRIALS_APP; routes /api/data, /api/ask, /api/agent"
+  },
+  "builds": {
+    "snowflake": {
+      "database": "SINGAPORE_HEALTHCARE_CLINICAL_TRIALS_SNOWFLAKE",
+      "app_setting": "DEMO_PLATFORM=snowflake",
+      "live_visits": "APP.SIMULATE_VISITS(n)",
+      "memo": "Cortex AI_COMPLETE (claude-sonnet-4-5)"
+    },
+    "aws": {
+      "database": "SINGAPORE_HEALTHCARE_CLINICAL_TRIALS_AWS",
+      "app_setting": "DEMO_PLATFORM=aws",
+      "live_visits": "Amazon Data Firehose -> S3 -> Snowpipe",
+      "memo": "Amazon Bedrock Claude Sonnet 4.5 via APP.BEDROCK_GENERATE",
+      "capabilities": "see required_capabilities"
+    }
+  }
+}
